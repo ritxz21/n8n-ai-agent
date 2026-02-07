@@ -10,3 +10,9 @@ combined.to_csv(
     sep="|",
     index=False
 )
+
+#  LOAD DATA LOCAL INFILE 'D:\Sem 2\Forecasting\n8n-ai-agent\n8n-ai-agent\online_retail_pipe.csv'
+#      INTO TABLE sales
+#      FIELDS TERMINATED BY '|'
+#      LINES TERMINATED BY '\n'
+#      IGNORE 1 LINES;
