@@ -1,0 +1,219 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "609dbbef-495b-4841-a3de-fdd15d7b612d",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "mySql": {
+          "id": "9IyETP0vzWcMqemM",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        464,
+        0
+      ],
+      "id": "37bdefb1-9210-446c-b77b-45b0a6b2550a",
+      "name": "When chat message received",
+      "webhookId": "24f1f0b5-7168-4823-971c-f54484d852ae"
+    },
+    {
+      "parameters": {
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a SQL assistant for MySQL. \nDatabase: online_retail\nTable: sales(Invoice, StockCode, Description, Quantity, InvoiceDate, Price, Customer_ID, Country)  \nRules:\n- Generate exactly ONE SQL SELECT query \n- NEVER use INSERT, UPDATE, DELETE, DROP \n- Revenue = Quantity * Price \n- Use LIMIT for top-N queries - Output SQL ONLY"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        624,
+        0
+      ],
+      "id": "6adfe619-765f-4342-8c3b-bab0df97859a",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        944,
+        272
+      ],
+      "id": "ac1b57e1-1668-4986-9076-4f7cc7f85e42",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "BxqrY4x26AAMomWr",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst raw = $json.text;\n\n// Remove leading \"sql\", code fences, and trim whitespace\nconst cleaned = raw\n  .replace(/^sql\\s*/i, '')\n  .replace(/```sql/gi, '')\n  .replace(/```/g, '')\n  .trim();\n\nreturn [\n  {\n    query: cleaned\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        0
+      ],
+      "id": "866ceb8d-dfcd-4959-bc3f-42dcf0918ef8",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}\n",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a helpful data analytics chatbot.  \nYou will receive: \n1) A user's natural language question\n 2) The results of a SQL query already executed on an online retail database  Your job:\n - Answer in clear, friendly English\n - Include a small markdown table if multiple rows are returned \n - Format numbers with commas and 2 decimal places\n - Add ONE short insight (trend, ranking, or notable gap)\n - Do NOT mention SQL, databases, or technical details"
+            },
+            {
+              "type": "HumanMessagePromptTemplate",
+              "message": "=User question:\n{{ $node[\"When chat message received\"].json.chatInput }}\n\nQuery results:\n{{ JSON.stringify($json.results, null, 2) }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1472,
+        0
+      ],
+      "id": "73340569-8a8a-4876-876c-2f53baabbd2d",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collect all rows from MySQL into a single object\nconst rows = items.map(item => item.json);\n\nreturn [\n  {\n    results: rows\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1296,
+        0
+      ],
+      "id": "1b5f53fa-f4b5-442b-a3e0-cc0ef3b989e9",
+      "name": "Code in JavaScript1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3ea931a9-f4fd-4f0a-a95e-96c5b7b32128",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a3ce82b8c40f506b1402dd1fffa631cbe39c49dde82dfa1d353e1db68084b4bb"
+  },
+  "id": "K-9xL3zwSGsyaSJpCbtxt",
+  "tags": []
+}
