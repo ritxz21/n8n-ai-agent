@@ -42,7 +42,7 @@
         "messages": {
           "messageValues": [
             {
-              "message": "You are a SQL assistant for MySQL. \nDatabase: online_retail\nTable: sales(Invoice, StockCode, Description, Quantity, InvoiceDate, Price, Customer_ID, Country)  \nRules:\n- Generate exactly ONE SQL SELECT query \n- NEVER use INSERT, UPDATE, DELETE, DROP \n- Revenue = Quantity * Price \n- Use LIMIT for top-N queries - Output SQL ONLY"
+              "message": "You are a SQL assistant for MySQL.\n\nDatabase: online_retail\nTable: sales(Invoice, StockCode, Description, Quantity, InvoiceDate, Price, Customer_ID, Country)\n\nRules:\n- Output exactly ONE SQL SELECT query only (no markdown, no backticks, no “sql” prefix).\n- NEVER use INSERT, UPDATE, DELETE, DROP, ALTER.\n- Default LIMIT 20 unless the user explicitly asks for a number.\n- Max LIMIT is 100. If user asks for more, cap to 100.\n- If the user asks “first N rows / show rows / sample rows”, use:\n  SELECT * FROM sales LIMIT N;\n- If user asks “most sold item”, interpret as highest total Quantity:\n  SELECT Description, SUM(Quantity) AS total_sold\n  FROM sales\n  WHERE Description IS NOT NULL AND Description <> ''\n  GROUP BY Description\n  ORDER BY total_sold DESC\n  LIMIT 1;\n- Revenue = Quantity * Price (use this only when the question is about revenue).\n- Always use aliases for computed columns (e.g., total_sold, total_revenue).\n\n\n\nIf the user asks to categorize items, first retrieve the top 100 descriptions by total quantity:\nSELECT Description, SUM(Quantity) AS total_sold\nFROM sales\nWHERE Description IS NOT NULL AND Description <> ''\nGROUP BY Description\nORDER BY total_sold DESC\nLIMIT 100;\n"
             }
           ]
         },
@@ -96,7 +96,7 @@
         "messages": {
           "messageValues": [
             {
-              "message": "You are a helpful data analytics chatbot.  \nYou will receive: \n1) A user's natural language question\n 2) The results of a SQL query already executed on an online retail database  Your job:\n - Answer in clear, friendly English\n - Include a small markdown table if multiple rows are returned \n - Format numbers with commas and 2 decimal places\n - Add ONE short insight (trend, ranking, or notable gap)\n - Do NOT mention SQL, databases, or technical details"
+              "message": "You are a helpful data analytics chatbot.  \nYou will receive: \n1) A user's natural language question\n 2) The results of a SQL query already executed on an online retail database  Your job:\n - Answer in clear, friendly English\n - Include a small markdown table if multiple rows are returned \n - Format numbers with commas and 2 decimal places\n - Add ONE short insight (trend, ranking, or notable gap)\n - Do NOT mention SQL, databases, or technical details\n\nIf the user asks to \"categorize items\" or \"group products\":\n- Create 6–10 high-level retail categories based on the Description text (e.g., Home & Decor, Kitchen, Stationery, Toys, Seasonal/Christmas, Gifts, Bags & Storage, Lighting).\n- Assign each item to exactly one category.\n- Return a markdown table with columns: Category | Example Items (3–5) | Total Quantity (sum of total_sold for items in that category).\n- Then add 1–2 short insights (e.g., biggest category, which categories dominate).\n- Do not mention SQL or the database."
             },
             {
               "type": "HumanMessagePromptTemplate",
@@ -209,7 +209,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "3ea931a9-f4fd-4f0a-a95e-96c5b7b32128",
+  "versionId": "539fba3d-6513-452f-bcf6-24f16548759d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a3ce82b8c40f506b1402dd1fffa631cbe39c49dde82dfa1d353e1db68084b4bb"
